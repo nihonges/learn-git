@@ -32,4 +32,3 @@ git rebase master
 git add .\xxx.txt
 git rebase --continue
 
-test
