@@ -24,3 +24,10 @@ git checkout master
 git merge issue1
 
 git branch -d issue1
+
+git reset --hard HEAD~
+
+git checkout issue3
+git rebase master
+git add .\xxx.txt
+git rebase --continue
