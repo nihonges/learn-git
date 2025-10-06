@@ -17,3 +17,8 @@ git branch issue1
 git branch
 
 git checkout issue1
+
+git checkout master
+git merge issue1
+
+git branch -d issue1
