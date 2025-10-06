@@ -32,3 +32,9 @@ git rebase master
 git add .\xxx.txt
 git rebase --continue
 
+git remote add origin http...
+git branch -M main
+git pull origin main
+git push origin main
+
+git checkout main
