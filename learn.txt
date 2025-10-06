@@ -38,3 +38,5 @@ git push
 git pull
 git fetch
 git diff main origin/main
+
+git clone ...
