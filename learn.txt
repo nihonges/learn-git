@@ -1,0 +1,8 @@
+
+hello world
+
+git config --global user.name "xuhua"
+
+git init
+
+git status
