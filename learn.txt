@@ -1,8 +1,19 @@
 
 hello world
+this line is from issue1 branch
 
 git config --global user.name "xuhua"
 
 git init
 
 git status
+
+git add .\xxx.txt
+
+git commit -m "first commid"
+
+git branch issue1
+
+git branch
+
+git checkout issue1
