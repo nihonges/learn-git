@@ -1,9 +1,4 @@
 
-hello world
-this line is from issue1 branch
-new line from issue2
-new line from issue3
-
 git config --global user.name "xuhua"
 
 git init
