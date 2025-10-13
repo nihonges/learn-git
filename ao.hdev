@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<l>read_image (Image,'C:/Users/nihon/Desktop/fehlstelle/ao.PNG')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>dev_open_window_fit_size (0, 0, Width, Height, -1, -1, WindowHandle)</l>
+<l>dev_display (Image)</l>
+<c></c>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<l>dev_set_draw('margin')</l>
+<c></c>
+<l>dev_set_line_width (3)</l>
+<c></c>
+<l>rgb1_to_gray (Image, GrayImage)</l>
+<c></c>
+<l>emphasize (GrayImage, ImageEmphasize, Width, Height, 5)</l>
+<l>mult_image (ImageEmphasize, ImageEmphasize, ImageResult, 1, 0)</l>
+<c></c>
+<l>threshold (ImageResult, Region, 200, 255)</l>
+<l>dilation_rectangle1 (Region, RegionDilation, 3, 3)</l>
+<c></c>
+<l>connection (RegionDilation, ConnectedRegions)</l>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 1500, 99999)</l>
+<l>dilation_rectangle1 (SelectedRegions, RegionDilation1, 2, 2)</l>
+<c></c>
+<l>fill_up (RegionDilation1, RegionFillUp)</l>
+<l>get_domain (ImageResult, Domain)</l>
+<l>difference (Domain, RegionFillUp, RegionDifference)</l>
+<l>connection (RegionDifference, ConnectedRegions1)</l>
+<c></c>
+<l>shape_trans (ConnectedRegions1, RegionTrans, 'rectangle2')</l>
+<c></c>
+<l>difference (Domain, RegionTrans, RegionDifference1)</l>
+<c></c>
+<l>connection (RegionDifference1, ConnectedRegions2)</l>
+<l>sort_region (ConnectedRegions2, SortedRegions, 'first_point', 'true', 'column')</l>
+<c></c>
+<l>select_obj (SortedRegions, ObjectSelected2, 2)</l>
+<l>select_obj (SortedRegions, ObjectSelected3, 3)</l>
+<c></c>
+<l>union2 (ObjectSelected2, ObjectSelected3, RegionUnion)</l>
+<l>stop()</l>
+<c></c>
+<l>reduce_domain (ImageResult, RegionUnion, ImageReduced)</l>
+<l>threshold (ImageReduced, Region1, 0, 20)</l>
+<c></c>
+<l>opening_rectangle1 (Region1, RegionOpening, 3, 3)</l>
+<c></c>
+<l>connection (RegionOpening, ConnectedRegions3)</l>
+<c></c>
+<l>gen_empty_region (EmptyRegion)</l>
+<c></c>
+<l>expand_gray (ConnectedRegions3, ImageResult, EmptyRegion, RegionExpand, 'maximal', 'image', 16)</l>
+<c></c>
+<l>intersection (RegionExpand, RegionExpand, RegionIntersection)</l>
+<c></c>
+<l>closing_circle (RegionIntersection, RegionClosing, 3.5)</l>
+<c></c>
+<l>connection (RegionClosing, ConnectedRegions4)</l>
+<l>select_shape (ConnectedRegions4, SelectedRegions1, 'area', 'and', 250, 99999)</l>
+<c></c>
+<l>gen_contour_region_xld (SelectedRegions1, Contours, 'border')</l>
+<c></c>
+<l>smooth_contours_xld (Contours, SmoothedContours, 5)</l>
+<c></c>
+<l>dev_display (Image)</l>
+<l>dev_set_color ('red')</l>
+<l>dev_display (SmoothedContours)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
