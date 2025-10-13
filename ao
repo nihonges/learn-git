@@ -1,0 +1,65 @@
+dev_close_window ()
+read_image (Image,'C:/Users/nihon/Desktop/ao.PNG')
+get_image_size (Image, Width, Height)
+dev_open_window_fit_size (0, 0, Width, Height, -1, -1, WindowHandle)
+dev_display (Image)
+
+set_display_font (WindowHandle, 16, 'mono', 'true', 'false')
+dev_set_draw('margin')
+
+dev_set_line_width (3)
+
+rgb1_to_gray (Image, GrayImage)
+
+emphasize (GrayImage, ImageEmphasize, Width, Height, 5)
+mult_image (ImageEmphasize, ImageEmphasize, ImageResult, 1, 0)
+
+threshold (ImageResult, Region, 200, 255)
+dilation_rectangle1 (Region, RegionDilation, 3, 3)
+
+connection (RegionDilation, ConnectedRegions)
+select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 1500, 99999)
+dilation_rectangle1 (SelectedRegions, RegionDilation1, 2, 2)
+
+fill_up (RegionDilation1, RegionFillUp)
+get_domain (ImageResult, Domain)
+difference (Domain, RegionFillUp, RegionDifference)
+connection (RegionDifference, ConnectedRegions1)
+
+shape_trans (ConnectedRegions1, RegionTrans, 'rectangle2')
+
+difference (Domain, RegionTrans, RegionDifference1)
+
+connection (RegionDifference1, ConnectedRegions2)
+sort_region (ConnectedRegions2, SortedRegions, 'first_point', 'true', 'column')
+
+select_obj (SortedRegions, ObjectSelected2, 2)
+select_obj (SortedRegions, ObjectSelected3, 3)
+
+union2 (ObjectSelected2, ObjectSelected3, RegionUnion)
+stop()
+
+reduce_domain (ImageResult, RegionUnion, ImageReduced)
+threshold (ImageReduced, Region1, 0, 20)
+
+opening_rectangle1 (Region1, RegionOpening, 3, 3)
+connection (RegionOpening, ConnectedRegions3)
+
+gen_empty_region (EmptyRegion)
+
+expand_gray (ConnectedRegions3, ImageResult, EmptyRegion, RegionExpand, 'maximal', 'image', 16)
+
+intersection (RegionExpand, RegionExpand, RegionIntersection)
+
+closing_circle (RegionIntersection, RegionClosing, 3.5)
+
+connection (RegionClosing, ConnectedRegions4)
+select_shape (ConnectedRegions4, SelectedRegions1, 'area', 'and', 250, 99999)
+
+gen_contour_region_xld (SelectedRegions1, Contours, 'border')
+
+smooth_contours_xld (Contours, SmoothedContours, 5)
+
+dev_display (Image)
+dev_set_color ('red')
+dev_display (SmoothedContours)
