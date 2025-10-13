@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_update_off ()</l>
+<l>dev_close_window()</l>
+<l>read_image (Image,'C:/Users/nihon/Desktop/scratch.PNG')</l>
+<c></c>
+<l>count_channels (Image, channels)</l>
+<c></c>
+<l>if(channels==3 or channels==4)</l>
+<l>    rgb1_to_gray(Image,Image)</l>
+<l>endif</l>
+<c></c>
+<l>get_image_size(Image,Width, Height)</l>
+<l>dev_open_window_fit_size(0,0,Width,Height, -1, -1, WindowHandle)</l>
+<l>dev_display(Image)</l>
+<c></c>
+<l>fft_generic(Image, ImageFFT, 'to_freq', -1, 'sqrt', 'dc_center', 'complex')</l>
+<l>gen_rectangle2(Rectangle1, 345, 194, rad(-3), 180, 7)</l>
+<l>gen_rectangle2(Rectangle2, 345, 194, rad(-90), 180, 4.6)</l>
+<l>union2(Rectangle1, Rectangle2, UnionRectangle)</l>
+<l>paint_region (UnionRectangle, ImageFFT, ImageResult, 0, 'fill')</l>
+<l>fft_generic (ImageResult, ImageFFT1, 'from_freq', 1, 'sqrt', 'dc_center', 'byte')</l>
+<c></c>
+<l>threshold(ImageFFT1, Region, 5, 24)</l>
+<l>connection(Region, ConnectedRegions)</l>
+<l>select_shape(ConnectedRegions, SelectedRegions, 'area', 'and', 25, 99999)</l>
+<l>union1(SelectedRegions, RegionUnion)</l>
+<l>dilation_rectangle1(RegionUnion, RegionDilation, 5, 5)</l>
+<l>connection(RegionDilation, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, ['width','height'], 'and', [25,25],[159,100])</l>
+<l>dilation_rectangle1(SelectedRegions1, RegionDilation1, 11, 11)</l>
+<l>union1 (RegionDilation1, RegionUnion1)</l>
+<l>skeleton (RegionUnion1, Skeleton)</l>
+<c></c>
+<l>dev_set_color ('red')</l>
+<l>dev_display(Image)</l>
+<l>dev_display (Skeleton)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

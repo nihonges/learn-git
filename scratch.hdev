@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window()</l>
+<l>dev_update_off ()</l>
+<l>path:= 'C:/Users/nihon/Desktop/fehlstelle/kratze.PNG'</l>
+<l>read_image (Image,path)</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>dev_open_window_fit_size (0, 0, Width, Height, -1, -1, WindowHandle)</l>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<c></c>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_line_width (3)</l>
+<l>dev_set_color ('red')</l>
+<c></c>
+<l>scalefactor:=0.4</l>
+<c></c>
+<l>calculate_lines_gauss_parameters (17, [25,3], Sigma, Low, High)</l>
+<c></c>
+<l>read_image (Image1, path)</l>
+<l>decompose3 (Image1, R, G, B)</l>
+<l>rft_generic (B, ImageFFT, 'to_freq', 'none', 'complex', Width)</l>
+<l>gen_gauss_filter (ImageGauss, 100, 100, 0, 'n', 'rft', Width, Height)</l>
+<l>convol_fft (ImageFFT, ImageGauss, ImageConvol)</l>
+<c></c>
+<l>rft_generic (ImageConvol, ImageFFT1, 'from_freq', 'none', 'byte', Width)</l>
+<c></c>
+<l>sub_image (B, ImageFFT1, ImageSub, 2, 100)</l>
+<l>zoom_image_factor (ImageSub, ImageZoomed, scalefactor, scalefactor, 'constant')</l>
+<c></c>
+<l>get_domain (ImageZoomed, Domain)</l>
+<c></c>
+<l>erosion_rectangle1 (Domain, RegionErosion, 7, 7)</l>
+<l>reduce_domain (ImageZoomed, RegionErosion, ImageReduced)</l>
+<l>lines_gauss (ImageReduced, Lines, Sigma, Low, High, 'dark', 'true', 'gaussian', 'true')</l>
+<c></c>
+<l>hom_mat2d_identity (HomMat2DIdentity)</l>
+<c></c>
+<l>hom_mat2d_scale_local (HomMat2DIdentity, 1/scalefactor, 1/scalefactor, HomMat2DScale)</l>
+<l>affine_trans_contour_xld (Lines, Defects, HomMat2DScale)</l>
+<l>dev_display (Image)</l>
+<l>dev_display (Defects)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

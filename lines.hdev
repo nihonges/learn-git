@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_update_off ()</l>
+<l>dev_clear_window ()</l>
+<l>read_image (Image,'C:/Users/nihon/Desktop/fehlstelle/line.PNG')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>dev_open_window_fit_image (Image, 0, 0, Width, Height, WindowHandle)</l>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_line_width (3)</l>
+<l>dev_display (Image)</l>
+<c></c>
+<l>mean_image (Image, ImageMean, 7, 7)</l>
+<l>dyn_threshold (Image, ImageMean, Darkpixels, 5, 'dark')</l>
+<l>connection(Darkpixels, ConnectedRegions)</l>
+<c></c>
+<l>dev_set_colored (12)</l>
+<l>dev_display (Image)</l>
+<l>dev_display (ConnectedRegions)</l>
+<c></c>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 10, 1999)</l>
+<l>dev_display (Image)</l>
+<l>dev_display (SelectedRegions)</l>
+<c></c>
+<l>union1 (SelectedRegions, RegionUnion)</l>
+<l>dilation_circle (RegionUnion, RegionDilation, 3.5)</l>
+<l>dev_display (Image)</l>
+<l>dev_display (RegionDilation)</l>
+<l>Message := 'Region of the scratches after dilation'</l>
+<c></c>
+<l>skeleton (RegionDilation, Skeleton)</l>
+<l>connection (Skeleton, Errors)</l>
+<l>dev_set_colored (12)</l>
+<l>dev_display (Image)</l>
+<l>dev_display (Errors)</l>
+<c></c>
+<l>select_shape (Errors, Scratches, 'area', 'and', 50, 19999)</l>
+<l>select_shape (Errors, Dots, 'area', 'and', 1, 50)</l>
+<l>dev_display (Image)</l>
+<l>dev_set_color ('red')</l>
+<l>dev_display (Scratches)</l>
+<c></c>
+<l>dev_set_color ('blue')</l>
+<l>dev_display (Dots)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<l>read_image (Image,'C:/Users/nihon/Desktop/fehlstelle/DENT.PNG')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>gen_rectangle1 (ROI, 5, 5, Height - 5, Width - 5)</l>
+<c></c>
+<c>* 在 ROI 内裁剪出图像区域（只分析中间部分）</c>
+<l>reduce_domain (Image, ROI, ImageReduced)</l>
+<c></c>
+<l>threshold (ImageReduced, Region, 128, 255)</l>
+<l>connection (Region, ConnectedRegions)</l>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 150, 99999)</l>
+<l>smallest_rectangle2 (SelectedRegions, Row, Column, Phi, Length1, Length2)</l>
+<l>gen_rectangle2 (Rectangle, Row, Column, Phi, Length1, Length2+5)</l>
+<l>reduce_domain (Image, Rectangle, ImageReduced)</l>
+<c></c>
+<l>gen_disc_se (SE, 'byte', 20, 20, 0)</l>
+<l>gray_bothat (ImageReduced, SE, ImageBotHat)</l>
+<l>scale_image_max (ImageBotHat, ImageScaleMax)</l>
+<c></c>
+<l>mean_image (ImageScaleMax, ImageMean, 50, 50)</l>
+<l>dyn_threshold (ImageScaleMax, ImageMean, RegionDynThresh, 15, 'light')</l>
+<c></c>
+<l>connection (RegionDynThresh, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, 'area', 'and', 50, 999)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

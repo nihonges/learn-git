@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<c>* This program demonstrates how to detect small texture</c>
+<c>* defects on the surface of plastic items by using the fast</c>
+<c>* fourier transform (FFT).</c>
+<c>* First, we construct a suitable filter using Gaussian</c>
+<c>* filters. Then, the images and the filter are convolved</c>
+<c>* by using fast fourier transforms. Finally, the defects</c>
+<c>* are detected in the filtered images by using</c>
+<c>* morphology operators.</c>
+<c>* </c>
+<c>* Initializations</c>
+<l>dev_update_off ()</l>
+<l>dev_close_window ()</l>
+<l>read_image (Image,'C:/Users/nihon/Desktop/scratch.PNG')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle)</l>
+<l>set_display_font (WindowHandle, 14, 'mono', 'true', 'false')</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_line_width (3)</l>
+<l>dev_set_color ('red')</l>
+<c>* </c>
+<c>* Optimize the fft speed for the specific image size</c>
+<l>optimize_rft_speed (Width, Height, 'standard')</l>
+<c>* </c>
+<c>* Construct a suitable filter by combining two gaussian</c>
+<c>* filters</c>
+<l>Sigma1 := 10.0</l>
+<l>Sigma2 := 3.0</l>
+<l>gen_gauss_filter (GaussFilter1, Sigma1, Sigma1, 0.0, 'none', 'rft', Width, Height)</l>
+<l>gen_gauss_filter (GaussFilter2, 8, Sigma2, 0.0, 'none', 'rft', Width, Height)</l>
+<l>sub_image (GaussFilter1, GaussFilter2, Filter, 1, 0)</l>
+<c>* </c>
+<c>* Process the images iteratively</c>
+<c></c>
+<l>rgb1_to_gray (Image, Image)</l>
+<l>emphasize (Image, ImageEmphasize, 3, 6, 8)</l>
+<c>* Perform the convolution in the frequency domain</c>
+<l>rft_generic (ImageEmphasize, ImageFFT, 'to_freq', 'none', 'complex', Width)</l>
+<l>convol_fft (ImageFFT, Filter, ImageConvol)</l>
+<l>rft_generic (ImageConvol, ImageFiltered, 'from_freq', 'n', 'real', Width)</l>
+<c>* </c>
+<c></c>
+<l>threshold (ImageFiltered, Region, -10, -2.5)</l>
+<l>connection (Region, ConnectedRegions2)</l>
+<l>select_shape (ConnectedRegions2, SelectedRegions2, 'area', 'and', 150, 99999)</l>
+<c></c>
+<c>* Process the filtered image</c>
+<l>gray_range_rect (ImageFiltered, ImageResult, 10, 10)</l>
+<l>min_max_gray (ImageResult, ImageResult, 0, Min, Max, Range)</l>
+<l>threshold (ImageResult, RegionDynThresh, 15, 55)</l>
+<l>connection (RegionDynThresh, ConnectedRegions)</l>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 100, 99999)</l>
+<l>union1 (SelectedRegions, RegionUnion)</l>
+<l>closing_circle (RegionUnion, RegionClosing, 10)</l>
+<l>connection (RegionClosing, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, 'area', 'and', 10, 99999)</l>
+<l>area_center (SelectedRegions1, Area, Row, Column)</l>
+<c>* </c>
+<c>* Display the results</c>
+<l>dev_display (Image)</l>
+<l>Number := |Area|</l>
+<l>if (Number)</l>
+<l>    gen_circle_contour_xld (ContCircle, Row, Column, gen_tuple_const(Number,30), gen_tuple_const(Number,0), gen_tuple_const(Number,rad(360)), 'positive', 1)</l>
+<l>    ResultMessage := ['Not OK',Number + ' defect(s) found']</l>
+<l>    Color := ['red','black']</l>
+<l>    dev_display (ContCircle)</l>
+<l>else</l>
+<l>    ResultMessage := 'OK'</l>
+<l>    Color := 'forest green'</l>
+<l>endif</l>
+<l>disp_message (WindowHandle, ResultMessage, 'window', 12, 12, Color, 'true')</l>
+<l>if (Index != NumImages)</l>
+<l>    disp_continue_message (WindowHandle, 'black', 'true')</l>
+<l>    stop ()</l>
+<l>endif</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
