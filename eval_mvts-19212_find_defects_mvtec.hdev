@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="25.05.0.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*****************************************************************</c>
+<c>*</c>
+<c>* Evaluation</c>
+<c>*</c>
+<c>*****************************************************************</c>
+<c>*</c>
+<c>*****************************************************************</c>
+<c>* Parameter</c>
+<c>*****************************************************************</c>
+<l>PathImages := './'</l>
+<c>*</c>
+<c>* GPU</c>
+<l>DeviceVendorToUse := 'NVIDIA Corporation'</l>
+<l>DeviceNameToUse := 'Tesla T4'</l>
+<l>* DeviceNameToUse := 'GeForce 8800 Ultra'</l>
+<l>MinDefectArea := 2</l>
+<c>*****************************************************************</c>
+<c>* Initialization</c>
+<c>*****************************************************************</c>
+<l>dev_update_off ()</l>
+<c>* </c>
+<c>* Initialization of the files</c>
+<l>list_image_files (PathImages, 'default', [], ImageFiles)</l>
+<c>*</c>
+<c>* Initialization of the display window</c>
+<l>dev_close_window ()</l>
+<l>dev_open_window (0, 0, 512, 512, 'black', WindowHandle)</l>
+<c>*</c>
+<c>* Initialization of further display parameters</c>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<l>dev_set_colored (12)</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_line_width (3)</l>
+<c>*</c>
+<c>* Initialization of the DeviceHandle</c>
+<l>DeviceHandle := []</l>
+<l>query_available_compute_devices (DeviceIdentifiers)</l>
+<l>for Index := 0 to |DeviceIdentifiers|-1 by 1</l>
+<l>    get_compute_device_info (DeviceIdentifiers[Index], 'name', DeviceName)</l>
+<l>    get_compute_device_info (DeviceIdentifiers[Index], 'vendor', DeviceVendor)</l>
+<l>    if (DeviceVendor == DeviceVendorToUse and \
+        DeviceName == DeviceNameToUse)</l>
+<l>        open_compute_device (DeviceIdentifiers[Index], DeviceHandle)</l>
+<l>        break</l>
+<l>    endif</l>
+<l>endfor</l>
+<c>*</c>
+<l>if (DeviceHandle != [])</l>
+<l>    init_compute_device (DeviceHandle, 'mean_image')</l>
+<l>endif</l>
+<c>*****************************************************************</c>
+<c>* Application</c>
+<c>*****************************************************************</c>
+<c>* Work through sample folder</c>
+<l>for I := 0 to (|ImageFiles|)-1 by 1</l>
+<l>    read_image (Image, ImageFiles[I])</l>
+<c>    *</c>
+<c>    * Color information is not necessary</c>
+<l>    rgb1_to_gray (Image, GrayImage)</l>
+<c>    *</c>
+<c>    * Remove boundary from domain</c>
+<l>    threshold (GrayImage, Region, 255, 255)</l>
+<l>    fill_up (Region, Foreground)</l>
+<l>    reduce_domain (GrayImage, Foreground, ImageReduced)</l>
+<c>    *</c>
+<l>    if (DeviceHandle != [])</l>
+<c>        * Mean image on a compute device</c>
+<l>        activate_compute_device (DeviceHandle)</l>
+<l>        mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<c>        *</c>
+<c>        * Mean image on the CPU</c>
+<l>        deactivate_compute_device (DeviceHandle)</l>
+<l>        mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>    else</l>
+<l>        mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>    endif</l>
+<c>    *</c>
+<c>    * Detection of the defects</c>
+<l>*     mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>    dyn_threshold (ImageReduced, ImageMeanBubble, RegionDynThreshContamination, 4, 'dark')</l>
+<l>    connection (RegionDynThreshContamination, ConnectedRegions)</l>
+<l>    select_shape (ConnectedRegions, Defects, 'area', 'and', MinDefectArea, 999999999)</l>
+<c>    *</c>
+<c>    * Classify if the object is defect or not</c>
+<l>    count_obj (Defects, NumberOfDefects)</l>
+<l>    if (NumberOfDefects &gt; 0)</l>
+<l>        Text := 'NOK: ' + NumberOfDefects + ' defects are detected!'</l>
+<l>        Color := 'red'</l>
+<l>    else</l>
+<l>        Text := 'OK: No defects are detected!'</l>
+<l>        Color := 'forest green'</l>
+<l>    endif</l>
+<c>    *</c>
+<c>    * Display of results</c>
+<l>    dev_display (Image)</l>
+<l>    dev_display (Defects)</l>
+<l>    dev_disp_text (Text, 'window', 'top', 'left', Color, [], [])</l>
+<c>    *</c>
+<l>    dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>    stop ()</l>
+<l>endfor</l>
+<l>stop ()</l>
+<c>*</c>
+<c>*****************************************************************</c>
+<c>* Clean up</c>
+<c>*****************************************************************</c>
+<l>dev_clear_window ()</l>
+<l>dev_update_on ()</l>
+<l>dev_disp_text ('End of program', 'window', 'top', 'left', 'black', [], [])</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
