@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hdevelop file_version="1.1" halcon_version="17.12">
+<hdevelop file_version="1.2" halcon_version="25.05.0.0">
 <procedure name="main">
 <interface/>
 <body>
@@ -53,13 +53,19 @@
 <c>*second</c>
 <l>dev_close_window ()</l>
 <l>dev_update_off ()</l>
-<l>read_image (Image,'C:/Users/nihon/Desktop/fehlstelle/firma/03-06-25_300dpi_bidirectional0-0.tif')</l>
+<l>read_image (Image,'C:/Arbeit/Pool/03-06-25_300dpi_bidirectional0-0.tif')</l>
+<l>* read_image (Image,'C:/Arbeit/Pool/04-06-25_randgebrochen_bckwrd_300dpi.tif')</l>
 <l>rgb1_to_gray (Image, GrayImageo)</l>
 <l>get_image_size (GrayImageo, Width_ori, Height_ori)</l>
 <l>gen_empty_obj (Images)</l>
 <l>gen_empty_obj (Tiles)</l>
 <l>gen_empty_obj (TilesLines)</l>
 <c>*</c>
+<c></c>
+<c></c>
+<l>randNum := 60.0</l>
+<l>thre := 50.0</l>
+<l>j := 0</l>
 <l>NumCols := 2</l>
 <l>NumRows := 2</l>
 <l>PartWidth  := int(Width_ori / NumCols)</l>
@@ -67,27 +73,148 @@
 <l>LastPartWidth  := Width_ori  - PartWidth * (NumCols-1)</l>
 <l>LastPartHeight := Height_ori - PartHeight * (NumRows-1)</l>
 <c></c>
+<l>optimize_rft_speed (PartWidth, PartHeight, 'standard')</l>
+<l>Sigma1 := 10.0</l>
+<l>Sigma2 := 2.0</l>
+<c></c>
+<l>gen_gauss_filter (GaussFilter1, Sigma1, Sigma1, 0, 'none', 'rft', PartWidth, PartHeight)</l>
+<l>gen_gauss_filter (GaussFilter2, Sigma2, Sigma2, 0, 'none', 'rft', PartWidth, PartHeight)</l>
+<l>sub_image (GaussFilter1, GaussFilter2, Filter, 1, 0)</l>
+<c></c>
 <l>for RowIndex := 0 to NumRows-1 by 1</l>
 <l>    for ColIndex := 0 to NumCols-1 by 1</l>
 <l>        Row := RowIndex * PartHeight</l>
 <l>        Col := ColIndex * PartWidth</l>
-<l>        crop_part (GrayImageo, Part, Row, Col, PartWidth, PartHeight)</l>
 <c>        </c>
+<c>        *(y,x)-&gt;x width, y height</c>
+<l>        if (ColIndex == NumCols-1)</l>
+<l>            if (RowIndex == NumRows-1)</l>
+<l>                crop_part (GrayImageo, Part, Row, Col, PartWidth-randNum, PartHeight-randNum)</l>
+<l>            else</l>
+<l>                crop_part (GrayImageo, Part, Row, Col, PartWidth-randNum, PartHeight)</l>
+<l>            endif</l>
+<l>        elseif (RowIndex == NumRows-1)</l>
+<l>            crop_part (GrayImageo, Part, Row, Col, PartWidth, PartHeight-randNum)</l>
+<l>        else</l>
+<l>            crop_part (GrayImageo, Part, Row, Col, PartWidth, PartHeight)</l>
+<l>        endif</l>
+<c>        *rft find block</c>
+<l>        invert_image (Part, ImageInvert)</l>
+<l>        rft_generic (ImageInvert, ImageFFT, 'to_freq', 'sqrt', 'complex', PartWidth)</l>
+<l>*         get_image_size (ImageFFT, WidthFFT, HeightFFT)</l>
+<l>*         gen_rectangle2 (RectangleFFT, 0, 0, 0, WidthFFT, HeightFFT)</l>
+<l>*         crop_rectangle1 (Filter, ImagePart, 0, 0, HeightFFT-1, WidthFFT-1)</l>
+<l>*         convol_fft (ImageFFT, ImagePart, ImageConvol)</l>
+<l>        convol_fft (ImageFFT, Filter, ImageConvol)</l>
+<l>        rft_generic (ImageConvol, ImageFiltered, 'from_freq', 'n', 'real', PartWidth)</l>
+<c>        </c>
+<l>*         gen_rectangle1 (Rectangle, 20, 20, Height-30, Width-30)</l>
+<l>*         reduce_domain (ImageFiltered, Rectangle, ROI)</l>
+<c>        </c>
+<l>*         median_image (ImageFiltered, ImageMedian, 'circle', 20, 'mirrored')</l>
+<l>*         smooth_image (ImageMedian, ImageSmooth, 'gauss', 5)</l>
+<c>        </c>
+<l>        threshold (ImageFiltered, RegionRft, -0.002, -0.0003)</l>
+<c>        </c>
+<l>        connection (RegionRft, ConnectedRegionsRft)</l>
+<l>        dilation_circle (ConnectedRegionsRft, RegionDilation, 3)</l>
+<c>        </c>
+<l>        fill_up (RegionDilation, RegionFillUp)</l>
+<l>        select_shape (RegionDilation, SelectedRegions, 'area', 'and', 200, 5000)</l>
+<c>        </c>
+<l>        gen_contour_region_xld (SelectedRegions, Contours, 'border')</l>
+<l>        fit_circle_contour_xld (Contours, 'atukey', -1, 2, 0, 5, 2, RowC, ColumnC, Radius, StartPhi, EndPhi, PointOrder)</l>
+<l>        gen_circle_contour_xld (ContCircle, RowC, ColumnC, Radius+20, 0, 6.28318, 'positive', 1)</l>
+<c>        </c>
+<l>        dev_display (Part)</l>
+<l>        dev_display (ContCircle)</l>
+<l>        stop()</l>
+<c>        * lines gauss find lines</c>
 <l>        get_image_size (Part, Width, Height)</l>
-<l>        calculate_lines_gauss_parameters (2, [25,5], Sigma, Low, High)</l>
-<l>        lines_gauss (Part, Lines, Sigma, Low, High, 'dark', 'true', 'gaussian', 'true')</l>
-<c>        * 将子图 XLD 坐标平移到全图坐标系</c>
-<l>        hom_mat2d_identity (HomMat2D)</l>
-<l>        hom_mat2d_translate (HomMat2D, Col, Row, HomMat2DTrans)</l>
-<l>        affine_trans_contour_xld (Lines, LinesGlobal, HomMat2DTrans)</l>
-<c></c>
-<c>        * 拼接所有 Lines</c>
-<l>        concat_obj (TilesLines, LinesGlobal, TilesLines)</l>
-<l>        concat_obj (Images, Part, Images)</l>
-<l>        FileName := 'part_' + RowIndex$'d' + '_' + ColIndex$'d' + '.tif'</l>
-<l>        write_image (Part, 'tiff', 0, FileName)</l>
+<l>        count_obj (Contours, Number)</l>
+<l>        for cir := 1 to Number by 1</l>
+<l>            select_obj(ContCircle, circle, cir)</l>
+<l>            gen_region_contour_xld(circle, circleRegion, 'filled')</l>
+<l>            reduce_domain (Part, circleRegion, ImageReduced)</l>
+<l>            calculate_lines_gauss_parameters (2, [25,5], Sigma, Low, High)</l>
+<l>            lines_gauss (ImageReduced, Lines, Sigma, Low, High, 'dark', 'true', 'gaussian', 'true')</l>
+<c>        </c>
+<c>        </c>
+<l>*         calculate_lines_gauss_parameters (2, [25,5], Sigma, Low, High)</l>
+<l>*         lines_gauss (ImageReduced, Lines, Sigma, Low, High, 'dark', 'true', 'gaussian', 'true')</l>
+<l>*         lines_gauss (Part, Lines, Sigma, Low, High, 'dark', 'true', 'gaussian', 'true')</l>
+<c>        *</c>
+<l>            count_obj(Lines, Num)</l>
+<l>            if (Num==0)</l>
+<l>                continue</l>
+<l>            endif</l>
+<l>            d := -0.1</l>
+<l>            my_array := []</l>
+<l>            for i := 0 to Num - 1 by 1</l>
+<l>                y_array := [my_array, d]</l>
+<l>                x_array := [my_array, d]</l>
+<l>                area_array := [my_array, d]</l>
+<c>                </c>
+<l>                yObj_array := [my_array, d]</l>
+<l>                xObj_array := [my_array, d]</l>
+<l>                areaObj_array := [my_array, d]</l>
+<l>            endfor</l>
+<l>            for Index := 1 to Num by 1</l>
+<l>                select_obj(Lines, SingleXLD, Index)</l>
+<l>                get_contour_xld(SingleXLD, xRows, xColumns)</l>
+<l>*                 tuple_mean(xRows, CenterY)</l>
+<l>*                 tuple_mean(xColumns, CenterX)</l>
+<l>*                 x_array[Index-1] := CenterX</l>
+<l>*                 y_array[Index-1] := CenterY</l>
+<c>    </c>
+<l>                length_xld(SingleXLD, Length)</l>
+<l>                gen_region_contour_xld(SingleXLD, xldRegion, 'filled')</l>
+<l>                area_center(xldRegion, Area, xRow, xColumn)</l>
+<l>                x_array[Index-1] := xColumn</l>
+<l>                y_array[Index-1] := xRow</l>
+<l>                area_array[Index-1] := Area</l>
+<l>                if (Area &gt; thre)</l>
+<l>                    yObj_array[j] := xRow</l>
+<l>                    xObj_array[j] := xColumn</l>
+<l>                    areaObj_array[j] := Area</l>
+<l>                    dev_set_draw ('margin')</l>
+<l>                    gen_circle(CircleRegion, xRow, xColumn, 15)</l>
+<l>                    j := j + 1</l>
+<l>                endif</l>
+<l>            endfor</l>
+<c>            *here</c>
+<l>            hom_mat2d_identity (HomMat2D)</l>
+<l>            hom_mat2d_translate (HomMat2D, Row, Col, HomMat2DTrans)</l>
+<l>            affine_trans_contour_xld (Lines, LinesGlobal, HomMat2DTrans)</l>
+<c>    </c>
+<c>            *</c>
+<l>            concat_obj (TilesLines, LinesGlobal, TilesLines)</l>
+<l>            concat_obj (Images, Part, Images)</l>
+<l>*             FileName := 'part_' + RowIndex$'d' + '_' + ColIndex$'d' + '.tif'</l>
+<l>*             write_image (Part, 'tiff', 0, FileName)</l>
+<l>        endfor</l>
 <l>    endfor</l>
 <l>endfor</l>
+<l>dev_display (GrayImageo)</l>
+<l>dev_display (TilesLines)</l>
+<l>gen_region_contour_xld (TilesLines, TilesRegion, 'filled')</l>
+<l>gen_contour_region_xld (TilesRegion, Contours, 'border')</l>
+<l>smallest_circle (TilesRegion, Row, Column, Radius)</l>
+<l>gen_circle_contour_xld (ContCircle, Row, Column, Radius+10, 0, 6.28318, 'positive', 1)</l>
+<l>dev_display (Image)</l>
+<l>dev_set_color ('green')</l>
+<l>dev_display (ContCircle)</l>
+<l>stop()</l>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
+<c>*</c>
 <c>*</c>
 <l>count_obj (Images, N)</l>
 <l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle)</l>
@@ -111,12 +238,12 @@
 <l>    hom_mat2d_translate (HomMat2D, ColOffset, RowOffset, HomMat2DTrans)</l>
 <l>    affine_trans_contour_xld (Lines, LinesGlobal, HomMat2DTrans)</l>
 <c></c>
-<c>    * 合并 XLD</c>
+<c>    * concat XLD</c>
 <l>    concat_obj (TilesLines, LinesGlobal, TilesLines)</l>
 <l>    concat_obj (Tiles, Img, Tiles)</l>
 <c>    *</c>
 <l>endfor</l>
-<c></c>
+<l>stop()</l>
 <c>*</c>
 <l>tile_images (Tiles, TiledImage, NumCols, 'vertical')</l>
 <l>dev_display (GrayImageo)</l>
