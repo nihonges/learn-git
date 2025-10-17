@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<c>* This program simulates automatic operator parallelization (AOP)</c>
+<c>* using parallel programming in HDevelop.</c>
+<c>* </c>
+<c>* It runs multiple passes of a filter (median_image) on a large</c>
+<c>* image, and visualizes the execution times under the following</c>
+<c>* conditions:</c>
+<c>* </c>
+<c>* ExecTimeSeq: sequential processing, i.e., AOP turned off</c>
+<c>* ExecTimeAop: parallel processing, i.e., AOP turned on (default</c>
+<c>*              behavior of HALCON)</c>
+<c>* ExecTimePar: simulated AOP, i.e., AOP turned off, but simulated</c>
+<c>*              using parallel programming</c>
+<c>* </c>
+<c>* The program measures the execution times repeatedly, utilizing</c>
+<c>* an increasing number of cores from one to the number of</c>
+<c>* available cores, and displays the results in a graph:</c>
+<c>* x-axis: number of utilized cores</c>
+<c>* y-axis: execution times [ms]</c>
+<c>* </c>
+<c>* By default, HDevelop limits the number of subthreads to 20.</c>
+<c>* If your system provides more cores, adjust the value under</c>
+<c>* Preferences -&gt; General Options -&gt; Max. num. of subthreads,</c>
+<c>* and adjust the variable MaxNumberOfSubthreads accordingly.</c>
+<c>* </c>
+<c>* Initialize program</c>
+<l>dev_close_window ()</l>
+<l>dev_update_off ()</l>
+<l>get_system ('processor_num', Cores)</l>
+<l>MaxNumberOfSubthreads := 20</l>
+<l>MaxThreads := min([Cores,MaxNumberOfSubthreads])</l>
+<l>TimesSeq := []</l>
+<l>TimesAop := []</l>
+<l>TimesPar := []</l>
+<l>Color := ['yellow','green','cyan']</l>
+<c>* Number of runs for a robust time measurement</c>
+<l>Runs := 10</l>
+<c>* Image zoom factor</c>
+<l>Factor := 3</l>
+<c>* Median filter size</c>
+<l>Radius := 15</l>
+<c>* Store initial system state</c>
+<l>get_system ('parallelize_operators', ParallelizeOperators)</l>
+<c>* </c>
+<l>read_image (Image, 'fabrik')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>zoom_image_factor (Image, Image, Factor, Factor, 'constant')</l>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle1)</l>
+<l>set_display_font (WindowHandle1, 16, 'mono', 'true', 'false')</l>
+<l>Message := 'Compare'</l>
+<l>Message[1] := '- sequential processing,'</l>
+<l>Message[2] := '- AOP processing, and'</l>
+<l>Message[3] := '- simulated AOP processing'</l>
+<l>disp_message (WindowHandle1, Message, 'window', 12, 12, 'black', 'true')</l>
+<l>dev_open_window (0, Width + 8, Width, Height, 'black', WindowHandle2)</l>
+<l>set_display_font (WindowHandle2, 16, 'mono', 'true', 'false')</l>
+<l>dev_display (Image)</l>
+<l>disp_message (WindowHandle2, ['Original image','Dimensions: ' + Width * Factor + 'x' + Height * Factor], 'window', 12, 12, 'black', 'true')</l>
+<c>* </c>
+<c>* Part 1:</c>
+<c>* Measure sequential execution time.</c>
+<l>set_system ('parallelize_operators', 'false')</l>
+<l>disp_message (WindowHandle1, 'Sequential processing', 'window', 106, 12, Color[0], ['black','false'])</l>
+<l>count_seconds (T1)</l>
+<l>for Run := 1 to Runs by 1</l>
+<l>    median_image (Image, ImageMedianSeq, 'circle', Radius, 'mirrored')</l>
+<l>endfor</l>
+<l>count_seconds (T2)</l>
+<l>TimesSeq := gen_tuple_const(MaxThreads,1000 * (T2 - T1) / Runs)</l>
+<c>* </c>
+<l>dev_display (ImageMedianSeq)</l>
+<l>disp_message (WindowHandle2, ['Median Image','Sequential Processing'], 'window', 12, 12, 'black', 'true')</l>
+<l>wait_seconds (1)</l>
+<l>dev_display (Image)</l>
+<l>disp_message (WindowHandle2, ['Original image','Dimensions: ' + Width * Factor + 'x' + Height * Factor], 'window', 12, 12, 'black', 'true')</l>
+<c>* </c>
+<c>* Part 2:</c>
+<c>* Measure execution time with AOP.</c>
+<l>set_system ('parallelize_operators', 'true')</l>
+<l>for Threads := 1 to MaxThreads by 1</l>
+<l>    set_system ('thread_num', Threads)</l>
+<l>    disp_message (WindowHandle1, 'AOP processing, threads: ' + Threads, 'window', 128, 12, Color[1], ['black','false'])</l>
+<l>    count_seconds (T1)</l>
+<l>    for Run := 1 to Runs by 1</l>
+<l>        median_image (Image, ImageMedianAop, 'circle', Radius, 'mirrored')</l>
+<l>    endfor</l>
+<l>    count_seconds (T2)</l>
+<l>    TimesAop := [TimesAop,1000 * (T2 - T1) / Runs]</l>
+<l>endfor</l>
+<c>* </c>
+<l>dev_display (ImageMedianAop)</l>
+<l>disp_message (WindowHandle2, ['Median image','AOP processing'], 'window', 12, 12, 'black', 'true')</l>
+<l>wait_seconds (1)</l>
+<l>dev_display (Image)</l>
+<l>disp_message (WindowHandle2, ['Original image','Dimensions: ' + Width * Factor + 'x' + Height * Factor], 'window', 12, 12, 'black', 'true')</l>
+<c>* </c>
+<c>* Part 3:</c>
+<c>* Measure parallel execution time by simulating AOP.</c>
+<l>set_system ('parallelize_operators', 'false')</l>
+<l>for Threads := 1 to MaxThreads by 1</l>
+<l>    disp_message (WindowHandle1, 'Simulate AOP processing, threads: ' + Threads, 'window', 150, 12, Color[2], ['black','false'])</l>
+<l>    count_seconds (T1)</l>
+<l>    for Run := 1 to Runs by 1</l>
+<l>        get_region_runs (Image, Row, ColumnBegin, ColumnEnd)</l>
+<l>        RunsPerThread := |Row| / Threads</l>
+<c>        * Split up the image and process each region by a separate thread:</c>
+<l>        for Thread := 0 to Threads - 1 by 1</l>
+<l>            IndexStart := Thread * RunsPerThread</l>
+<l>            if (Thread &lt; Threads - 1)</l>
+<l>                IndexEnd := IndexStart + RunsPerThread - 1</l>
+<l>            else</l>
+<l>                IndexEnd := |Row| - 1</l>
+<l>            endif</l>
+<l>            gen_region_runs (Region, Row[IndexStart:IndexEnd], ColumnBegin[IndexStart:IndexEnd], ColumnEnd[IndexStart:IndexEnd])</l>
+<l>            reduce_domain (Image, Region, ImageReduced)</l>
+<l>            par_start&lt;ThreadID.at(Thread)&gt; : median_image (ImageReduced, ImageMedianThread.at(Thread), 'circle', Radius, 'mirrored')</l>
+<l>        endfor</l>
+<l>        convert_vector_to_tuple (ThreadID, ThreadIDs)</l>
+<l>        par_join (ThreadIDs)</l>
+<c>        * Free references to thread IDs.</c>
+<l>        ThreadID.clear()</l>
+<l>        ThreadIDs := []</l>
+<c>        * Merge results</c>
+<l>        full_domain (ImageMedianThread.at(0), ImageMedianPar)</l>
+<l>        for ImagePart := 1 to Threads - 1 by 1</l>
+<l>            overpaint_gray (ImageMedianPar, ImageMedianThread.at(ImagePart))</l>
+<l>        endfor</l>
+<l>    endfor</l>
+<l>    count_seconds (T2)</l>
+<l>    TimesPar := [TimesPar,1000 * (T2 - T1) / Runs]</l>
+<l>endfor</l>
+<c>* </c>
+<l>dev_display (ImageMedianPar)</l>
+<l>disp_message (WindowHandle2, ['Median image','Simulated AOP processing'], 'window', 12, 12, 'black', 'true')</l>
+<c>* </c>
+<c>* Plot results</c>
+<l>TimeMax := max([TimesSeq,TimesAop,TimesPar])</l>
+<l>TicksX := int(ceil(MaxThreads / 16.0))</l>
+<l>PlotParamName := ['ticks_x','margin_top','margin_left','start_y','end_y']</l>
+<l>PlotParamValue := [TicksX,220,90,0,TimeMax * 1.1]</l>
+<l>plot_tuple (WindowHandle1, [1:MaxThreads], [TimesSeq,TimesAop,TimesPar], 'Number of threads', 'Execution time [ms]', Color, PlotParamName, PlotParamValue)</l>
+<c>* Alternatively inspect the plots in the function inspect dialog</c>
+<l>* dev_inspect_ctrl (['plot',TimesSeq,TimesAop,TimesPar])</l>
+<c>* Restore initial system state</c>
+<l>set_system ('parallelize_operators', ParallelizeOperators)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

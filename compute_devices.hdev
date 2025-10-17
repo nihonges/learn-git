@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<c>* This example shows how to use compute devices with HALCON.</c>
+<c>* </c>
+<l>dev_update_off ()</l>
+<l>dev_close_window ()</l>
+<l>dev_open_window_fit_size (0, 0, 640, 480, -1, -1, WindowHandle)</l>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<c>* </c>
+<c>* Get list of all available compute devices.</c>
+<l>query_available_compute_devices (DeviceIdentifier)</l>
+<c>* </c>
+<c>* End example if no device could be found.</c>
+<l>if (|DeviceIdentifier| == 0)</l>
+<l>    return ()</l>
+<l>endif</l>
+<c>* </c>
+<c>* Display basic information on detected devices.</c>
+<l>disp_message (WindowHandle, 'Found ' + |DeviceIdentifier| + ' Compute Device(s):', 'window', 12, 12, 'black', 'true')</l>
+<l>for Index := 0 to |DeviceIdentifier| - 1 by 1</l>
+<l>    get_compute_device_info (DeviceIdentifier[Index], 'name', DeviceName)</l>
+<l>    get_compute_device_info (DeviceIdentifier[Index], 'vendor', DeviceVendor)</l>
+<l>    Message[Index] := 'Device #' + Index + ': ' + DeviceVendor + ' ' + DeviceName</l>
+<l>endfor</l>
+<l>disp_message (WindowHandle, Message, 'window', 42, 12, 'white', 'false')</l>
+<l>disp_continue_message (WindowHandle, 'black', 'true')</l>
+<l>stop ()</l>
+<c>* </c>
+<c>* Perform a small benchmark for all devices.</c>
+<l>for DeviceIndex := 0 to |DeviceIdentifier| - 1 by 1</l>
+<l>    dev_clear_window ()</l>
+<l>    disp_message (WindowHandle, 'Activating Device #' + DeviceIndex + ' and performing benchmark...', 'window', 12, 12, 'black', 'true')</l>
+<c>    * Open device.</c>
+<l>    open_compute_device (DeviceIdentifier[DeviceIndex], DeviceHandle)</l>
+<c>    * Deactivate asynchronous execution to obtain reliable benchmarks.</c>
+<l>    set_compute_device_param (DeviceHandle, 'asynchronous_execution', 'false')</l>
+<c>    * Call affine_trans_image on this device and measure the obtained speed-up.</c>
+<c>    * Activate the compute device and perform the initialization of affine_trans_image.</c>
+<c>    * If this is omitted, the initialization is performed with the first</c>
+<c>    * call of affine_trans_image.</c>
+<l>    init_compute_device (DeviceHandle, 'affine_trans_image')</l>
+<l>    activate_compute_device (DeviceHandle)</l>
+<c>    * create benchmark input data</c>
+<l>    read_image (Image, 'rings_and_nuts')</l>
+<l>    hom_mat2d_identity (HomMat2DIdentity)</l>
+<l>    hom_mat2d_scale (HomMat2DIdentity, 0.9, 0.9, 320, 240, HomMat2DScale)</l>
+<l>    hom_mat2d_rotate (HomMat2DScale, 0.78, 320, 240, HomMat2D)</l>
+<c>    * Set number of benchmark loops.</c>
+<l>    Loops := 200</l>
+<c>    * One call to fill caches.</c>
+<l>    affine_trans_image (Image, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<l>    count_seconds (Before)</l>
+<l>    for Index := 1 to Loops by 1</l>
+<l>        affine_trans_image (Image, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<l>    endfor</l>
+<l>    count_seconds (After)</l>
+<l>    TimeGPU := (After - Before) * 1000.0 / Loops</l>
+<c>    * </c>
+<c>    * Perform a slightly modified version of this benchmark to include</c>
+<c>    * host-&gt;device and device-&gt;host transfer.</c>
+<l>    get_grayval (Image, 0, 0, Grayval)</l>
+<l>    affine_trans_image (Image, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<l>    count_seconds (Before)</l>
+<l>    for Index := 1 to Loops by 1</l>
+<c>        * set_grayval ensures that Image must be transferred to the device again.</c>
+<l>        set_grayval (Image, 0, 0, Grayval)</l>
+<l>        affine_trans_image (Image, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<c>        * get_image_pointer1 ensures that ImageAffineTrans is transferred back to host.</c>
+<l>        get_image_pointer1 (ImageAffineTrans, Pointer, Type, Width, Height)</l>
+<l>    endfor</l>
+<l>    count_seconds (After)</l>
+<l>    TimeGPUinclTransfer := (After - Before) * 1000.0 / Loops</l>
+<c>    * </c>
+<c>    * Deactivate the device and perform the same benchmark on the CPU.</c>
+<l>    deactivate_compute_device (DeviceHandle)</l>
+<l>    affine_trans_image (Image, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<l>    count_seconds (Before)</l>
+<l>    for Index := 1 to Loops by 1</l>
+<l>        affine_trans_image (Image, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<l>    endfor</l>
+<l>    count_seconds (After)</l>
+<l>    TimeCPU := (After - Before) * 1000.0 / Loops</l>
+<l>    SpeedUp := TimeCPU / TimeGPU</l>
+<l>    Message := 'affine_trans_image runtimes:'</l>
+<l>    Message[1] := 'Compute Device #' + DeviceIndex + ' (excl. transfer): ' + TimeGPU$'.2f' + ' ms'</l>
+<l>    Message[2] := 'Compute Device #' + DeviceIndex + ' (incl. transfer): ' + TimeGPUinclTransfer$'.2f' + ' ms'</l>
+<l>    Message[3] := 'CPU:                                ' + TimeCPU$'.2f' + ' ms'</l>
+<l>    Message[4] := ' '</l>
+<l>    Message[5] := 'Potential speedup: ' + SpeedUp$'.1f'</l>
+<l>    disp_message (WindowHandle, Message, 'window', 42, 12, 'white', 'false')</l>
+<l>    if (DeviceIndex &lt; |DeviceIdentifier| - 1)</l>
+<l>        disp_continue_message (WindowHandle, 'black', 'true')</l>
+<l>        stop ()</l>
+<l>    endif</l>
+<l>endfor</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
