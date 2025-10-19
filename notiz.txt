@@ -12,3 +12,4 @@ Zusätzlich zu select_shape() kann auch lines_gauss() verwendet werden, um linea
 
 Heute werde ich die Verarbeitungszeit der Bilder testen und die Ergebnisse anschließend hier eintragen.
 
+Die Verarbeitung großer Bilder auf der Grafikkarte reduziert die benötigte Zeit. Bei der Bearbeitung kleiner Bereiche ist dies jedoch nicht unbedingt der Fall. In solchen Situationen, in denen die Bearbeitungszeit ohnehin kurz ist, kann der zusätzliche Aufwand für die Datenübertragung zwischen CPU und GPU dazu führen, dass die Verarbeitung länger dauert als ohne GPU.
