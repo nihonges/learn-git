@@ -1,0 +1,14 @@
+Derzeit benötigen wir für die Analyse eines 3000×2000-Bildes mit der Methode syn etwa 300 ms. Die anschließende Filterung mit select_shape sollte ebenfalls in unter einer halben Sekunde möglich sein.
+
+Wenn zur Vorverarbeitung die Frequenzanalyse mittels FFT eingesetzt wird, um Objekte, die sich vom Hintergrund unterscheiden – wie beispielsweise Luftblasen, Staubpartikel oder Fussel – hervorzuheben, müssen die großen Bilder in kleinere Abschnitte unterteilt werden, da eine direkte Verarbeitung des gesamten Bildes keine guten Ergebnisse liefert. Diese Methode benötigt zudem mehr Zeit, etwa 3–4 Sekunden pro Bild.
+
+Durch Skalierung der Auflösung kann die benötigte Zeit verkürzt werden, da die Bildgröße auf ein Viertel des Originals reduziert wird und sich die Verarbeitungszeit entsprechend verringert.
+
+Die Parallelisierung ist in MVTec standardmäßig aktiviert. Alle oben genannten Ergebnisse basieren daher auf der Nutzung dieser Funktion.
+
+Einige Funktionen (Teile der Analyse) können auf der Grafikkarte ausgeführt werden, zum Beispiel mean_image.
+
+Zusätzlich zu select_shape() kann auch lines_gauss() verwendet werden, um lineare Objekte zu filtern. Ich habe dies bereits mit Kellac diskutiert. In der aktuellen Situation, in der die genaue Form der Fehler noch unklar ist, werden lineare Objekte als Staub oder Fussel behandelt, da Luftblasen in der Regel rund sind.
+
+Heute werde ich die Verarbeitungszeit der Bilder testen und die Ergebnisse anschließend hier eintragen.
+
