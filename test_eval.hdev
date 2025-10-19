@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="17.12">
+<procedure name="main">
+<interface/>
+<body>
+<c>*****************************************************************</c>
+<c>*</c>
+<c>* Evaluation</c>
+<c>*</c>
+<c>*****************************************************************</c>
+<c>*</c>
+<c>*****************************************************************</c>
+<c>* Parameter</c>
+<c>*****************************************************************</c>
+<l>PathImages := 'C:/Users/nihon/Desktop/fehlstelle/firma/test_pics/'</l>
+<c>*</c>
+<c>* GPU</c>
+<l>* DeviceVendorToUse := 'NVIDIA Corporation'</l>
+<l>* DeviceNameToUse := 'Tesla T4'</l>
+<l>DeviceVendorToUse := 'NVIDIA Corporation'</l>
+<l>DeviceNameToUse := 'NVIDIA GeForce GTX 1650 Ti'</l>
+<l>* DeviceNameToUse := 'GeForce 8800 Ultra'</l>
+<l>MinDefectArea := 15</l>
+<c>*****************************************************************</c>
+<c>* Initialization</c>
+<c>*****************************************************************</c>
+<l>dev_update_off ()</l>
+<c>* </c>
+<c>* Initialization of the files</c>
+<l>list_image_files (PathImages, 'default', [], ImageFiles)</l>
+<c>*</c>
+<c>* Initialization of the display window</c>
+<l>dev_close_window ()</l>
+<l>dev_open_window (0, 0, 512, 512, 'black', WindowHandle)</l>
+<c>*</c>
+<c>* Initialization of further display parameters</c>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<l>dev_set_colored (12)</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_line_width (3)</l>
+<c>*</c>
+<c>* Initialization of the DeviceHandle</c>
+<c>* Add Obj</c>
+<l>gen_empty_obj (NewContCircleBlock)</l>
+<l>DeviceHandle := []</l>
+<l>query_available_compute_devices (DeviceIdentifiers)</l>
+<l>for Index := 0 to |DeviceIdentifiers|-1 by 1</l>
+<l>    get_compute_device_info (DeviceIdentifiers[Index], 'name', DeviceName)</l>
+<l>    get_compute_device_info (DeviceIdentifiers[Index], 'vendor', DeviceVendor)</l>
+<l>    if (DeviceVendor == DeviceVendorToUse and \
+        DeviceName == DeviceNameToUse)</l>
+<l>        open_compute_device (DeviceIdentifiers[Index], DeviceHandle)</l>
+<l>        break</l>
+<l>    endif</l>
+<l>endfor</l>
+<c>*</c>
+<l>if (DeviceHandle != [])</l>
+<l>    init_compute_device (DeviceHandle, 'mean_image')</l>
+<l>    init_compute_device (DeviceHandle, 'lines_gauss')</l>
+<l>endif</l>
+<c>*****************************************************************</c>
+<c>* Application</c>
+<c>*****************************************************************</c>
+<c>* Work through sample folder</c>
+<l>get_operator_name ('info', OperatorNames)</l>
+<l>for I := 0 to (|ImageFiles|-1) by 1</l>
+<l>    read_image (Image, ImageFiles[I])</l>
+<l>    zoom_image_factor (Image, ImageZoomed, 1, 1, 'constant')</l>
+<c>    *</c>
+<c>    * Color information is not necessary</c>
+<l>    rgb1_to_gray (ImageZoomed, GrayImage)</l>
+<c>    *</c>
+<c>    * Remove boundary from domain</c>
+<l>    threshold (GrayImage, Region, 255, 255)</l>
+<l>    fill_up (Region, Foreground)</l>
+<l>    reduce_domain (GrayImage, Foreground, ImageReduced)</l>
+<c>    *</c>
+<l>    if (DeviceHandle != [])</l>
+<c>        * Mean image on a compute device</c>
+<l>        activate_compute_device (DeviceHandle)</l>
+<l>*         deactivate_compute_device (DeviceHandle)</l>
+<l>        mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>*         activate_compute_device (DeviceHandle)</l>
+<l>        lines_gauss (ImageMeanBubble, Lines, 15, 3, 8, 'light', 'true', 'bar-shaped', 'true')</l>
+<c>        *</c>
+<c>        * Mean image on the CPU</c>
+<l>*         deactivate_compute_device (DeviceHandle)</l>
+<l>*         mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>*         lines_gauss (ImageMeanBubble, Lines, 15, 3, 8, 'light', 'true', 'bar-shaped', 'true')</l>
+<c>        </c>
+<l>    else</l>
+<l>        mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>    endif</l>
+<c>    *</c>
+<c>    * Detection of the defects</c>
+<l>*     mean_image (ImageReduced, ImageMeanBubble, 51, 51)</l>
+<l>    dyn_threshold (ImageReduced, ImageMeanBubble, RegionDynThreshContamination, 4, 'dark')</l>
+<l>    connection (RegionDynThreshContamination, ConnectedRegions)</l>
+<l>    select_shape (ConnectedRegions, Defects, 'area', 'and', MinDefectArea*1, 999999999)</l>
+<c>    *</c>
+<c>    * Display potential defect regions</c>
+<l>    gen_contour_region_xld (Defects, Contours, 'border')</l>
+<l>    fit_circle_contour_xld (Contours, 'atukey', -1, 2, 0, 5, 2, RowC, ColumnC, Radius, StartPhi, EndPhi, PointOrder)</l>
+<l>    gen_circle_contour_xld (ContCircleBlock, RowC, ColumnC, Radius+20, 0, 6.28318, 'positive', 1)</l>
+<c>    </c>
+<l>    dev_display (ImageReduced)</l>
+<l>    dev_display (ContCircleBlock)</l>
+<c>    *</c>
+<c>    * Remove linear objects</c>
+<l>    count_obj (ContCircleBlock, Number)</l>
+<l>    for cir := 1 to Number by 1</l>
+<l>        select_obj(ContCircleBlock, circle, cir)</l>
+<l>        gen_region_contour_xld(circle, circleRegion, 'filled')</l>
+<l>        reduce_domain (GrayImage, circleRegion, ImageReducedSmall)</l>
+<c>        </c>
+<l>        calculate_lines_gauss_parameters (2*2, [10,5], Sigma, Low, High)</l>
+<l>        lines_gauss (ImageReducedSmall, Lines, Sigma, Low, High, 'dark', 'true', 'gaussian', 'true')</l>
+<c></c>
+<l>        select_contours_xld (Lines, SelectedContours1, 'closed', 0, 8, 0, 0)</l>
+<l>        count_obj(SelectedContours1, x)</l>
+<l>        if (x!=0)</l>
+<l>            stop()</l>
+<l>        endif</l>
+<c>        </c>
+<l>        count_obj(Lines, Num)</l>
+<l>        if (Num==0)</l>
+<l>            select_obj(ContCircleBlock, Obj, cir)</l>
+<l>            concat_obj(NewContCircleBlock, Obj, NewContCircleBlock)</l>
+<l>*             continue</l>
+<l>        else</l>
+<l>            select_contours_xld (Lines, SelectedContours, 'contour_length', 5, 40, 0, 0)</l>
+<l>            count_obj (SelectedContours, n)</l>
+<l>            if (n==0)</l>
+<l>                select_obj(ContCircleBlock, Obj, cir)</l>
+<l>                concat_obj(NewContCircleBlock, Obj, NewContCircleBlock)</l>
+<l>            else</l>
+<l>                continue</l>
+<l>            endif</l>
+<l>        endif</l>
+<c>    * Classify if the object is defect or not</c>
+<l>*     count_obj (Defects, NumberOfDefects)</l>
+<l>*     if (NumberOfDefects &gt; 0)</l>
+<l>*         Text := 'NOK: ' + NumberOfDefects + ' defects are detected!'</l>
+<l>*         Color := 'red'</l>
+<l>*     else</l>
+<l>*         Text := 'OK: No defects are detected!'</l>
+<l>*         Color := 'forest green'</l>
+<l>*     endif</l>
+<c>    *</c>
+<c>    * Display of results</c>
+<l>    dev_display (GrayImage)</l>
+<l>    dev_display (Defects)</l>
+<l>    dev_display (NewContCircleBlock)</l>
+<l>*     dev_disp_text (Text, 'window', 'top', 'left', Color, [], [])</l>
+<c>    *</c>
+<l>*     dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>*     stop ()</l>
+<l>endfor</l>
+<l>endfor</l>
+<l>stop ()</l>
+<c>*</c>
+<c>*****************************************************************</c>
+<c>* Clean up</c>
+<c>*****************************************************************</c>
+<l>dev_clear_window ()</l>
+<l>dev_update_on ()</l>
+<l>dev_disp_text ('End of program', 'window', 'top', 'left', 'black', [], [])</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
