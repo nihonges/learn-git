@@ -9,7 +9,7 @@ def image_processing3(folder_path, output_folder):
     start = time.time()
     start1 = time.time()
     for filename in os.listdir(folder_path):
-        if filename.endswith('.tif'):
+        if filename.endswith('.png'):
             inputPath = os.path.join(folder_path, filename)
             image = cv2.imread(inputPath)
 
@@ -21,20 +21,20 @@ def image_processing3(folder_path, output_folder):
 
             h, w = image.shape[:2]
 
-            xs = 100
-            xe = w - 200
-            ys = 100
-            ye = h - 100
-            xs=10542
-            ys=2336
-            xe =xs+20
-            ye= ys+20
-            # xs=4586
-            # ys=19054
+            # xs = 100
+            # xe = w - 200
+            # ys = 100
+            # ye = h - 100
+            # xs=10542
+            # ys=2336
             # xe =xs+20
             # ye= ys+20
-
-            cropped_image = image[ys:ye, xs: xe]
+            # # xs=4586
+            # # ys=19054
+            # # xe =xs+20
+            # # ye= ys+20
+            cropped_image = image
+            # cropped_image = image[ys:ye, xs: xe]
             h, w = cropped_image.shape[:2]
             output_path = os.path.join(output_folder, f"{os.path.splitext(filename)[0]}_circles.png")
             # cv2.imwrite(output_path, binary)
@@ -81,15 +81,23 @@ def image_processing3(folder_path, output_folder):
                 tmp_h = abs(box[2][1] - box[1][1])
                 if radius > 3.5 and radius < 12.5 and abs(cx - center[0]) < 3 and abs(cy - center[1]) < 3 and abs(
                         rect_w - rect_h) < 3 and abs(tmp_w - tmp_h) < 3 and tmp_w > 0 and tmp_h > 0:
-                    start_point = contour[0][0]
-                    end_point = contour[-1][0]
+                    area = cv2.contourArea(contour)
+                    perimeter = cv2.arcLength(contour, True)
+                    circularity = 4 * np.pi * area / (perimeter ** 2)
+                    #
+                    (x, y), radius = cv2.minEnclosingCircle(contour)
+                    circle_area = np.pi * (radius ** 2)
+                    contour_area = cv2.contourArea(contour)
 
-                    distance = np.linalg.norm(start_point - end_point)
+                    ratio = contour_area / circle_area
+                    print("Area ratio:", ratio)
+                    #
+                    if len(contour) >= 5:  # 拟合椭圆至少需要5个点
+                        ellipse = cv2.fitEllipse(contour)
+                        (center, axes, angle) = ellipse
+                        major, minor = axes
+                        ratio = major / minor
 
-                    if cv2.isContourConvex(contour):
-                        print('ok')
-                    if hierarchy[0][idx][2] != -1:
-                        print("有洞")
                     print("add:" + str(center) + "|" + str(radius) + "|" + str(rect_x) + "," + str(rect_y) + "|" + str(
                         rect_h) + "," + str(rect_w) + "|" + str(tmp_h) + "," + str(tmp_w))
                     closed_contours.append(contour)
@@ -107,7 +115,7 @@ def image_processing(folder_path, output_folder):
     start = time.time()
     start1 = time.time()
     for filename in os.listdir(folder_path):
-        if filename.endswith('.tif'):
+        if filename.endswith('.png'):
             inputPath = os.path.join(folder_path, filename)
             img = cv2.imread(inputPath, cv2.IMREAD_GRAYSCALE)
 
@@ -193,7 +201,7 @@ def image_processing_zone(folder_path, output_folder):
     start = time.time()
     start1 = time.time()
     for filename in os.listdir(folder_path):
-        if filename.endswith('.tif'):
+        if filename.endswith('.png'):
             inputPath = os.path.join(folder_path, filename)
             img = cv2.imread(inputPath, cv2.IMREAD_GRAYSCALE)
 
@@ -263,8 +271,8 @@ def image_processing_zone(folder_path, output_folder):
 
 if __name__ == '__main__':
 
-    folder_path = r'C:\Arbeit\python_opencv'
-    output_folder = r'C:\Arbeit\python_opencv\result'
+    folder_path = r'D:\Lesson\opencv-learn\python'
+    output_folder = r'D:\Lesson\opencv-learn\python\result'
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
