@@ -1,4 +1,8 @@
-You can use the Image Filter → Annotated option to display only the annotated images.
- 
-If your original images were already annotated, and you later changed the View (for example, after dividing the image), the annotations will be automatically retained in the new dataset.
-You can then select all images and right-click to open the context menu, then choose Batch Save to assign them to the training set efficiently — no need to add them one by one.
+My original images were already annotated (as shown in the screenshot). After dividing the images, I can still see all the annotations listed in Annotation Management, so the annotation data is definitely still there.
+
+However, when I switch the view from Show All to Annotated, no images appear. Also, when I try to right-click and batch add them to the Training Set, I get an error.
+
+It seems that the software is not recognizing the divided images as “annotated.”
+Could you please advise what might be causing this? Do I need to manually re-link the annotations or refresh the dataset index?
+
+Thanks!
