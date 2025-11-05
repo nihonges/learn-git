@@ -1,0 +1,29 @@
+Subject: Questions Regarding “Divide” Function and Training Workflow
+
+Dear [Name/Team],
+
+I hope you are doing well. I have a few questions regarding the image dividing and training workflow in the software:
+
+Divide Interface – Overlap Setting
+In the “Divide” interface, I could not find the option for “Add Overlap”. Could you please advise where this option is located, or whether it has been moved or removed in the current version?
+
+Large Number of Sub-Images
+After dividing one image into small patches, for example 8 original images may result in ~800 sub-images. When using the Training Helper, it seems I cannot directly assign them into the training set in batch. Do I need to manually add them one-by-one, or is there a recommended method to import and label them more efficiently?
+
+Set as OK / Set View Tag / Set Image Tag
+I would also like to confirm the meaning and impact of:
+
+Set as OK
+
+Set View Tag
+
+Set Image Tag
+
+How do these settings influence the training process? Which ones are necessary for training, and in what cases should they be used?
+
+Log Files Location
+Lastly, where can I find the log file you mentioned earlier? I found several files with “log” in the name, but none of them seem to contain the time-related information since the software has already been closed. Please let me know the exact path or filename I should look for.
+
+Thank you very much for your support. I appreciate your guidance.
+
+Best regards,
